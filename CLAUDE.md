@@ -10,14 +10,14 @@
 
 以下を前提とする。実際の `package.json`、ロックファイル、設定ファイルが異なる場合は、リポジトリの実設定を優先し、差異を報告する。
 
-- TypeScript 5.9
-- Node.js 22
+- TypeScript
+- Node.js
 - npm
-- Express 5.1
-- PostgreSQL 15
-- Jest 29.7
-- tsyringe 4.10
-- ESLint 9.37（Flat Config）
+- Express
+- PostgreSQL
+- Jest
+- tsyringe
+- ESLint Flat Config）
 
 依存パッケージを追加・更新する場合は、必要性を説明し、既存の依存関係・バージョン方針を確認する。ユーザーの許可なくメジャーバージョンを変更しない。
 
