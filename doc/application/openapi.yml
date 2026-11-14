@@ -1,0 +1,204 @@
+openapi: 3.1.0
+info:
+  title: CatalogService-Sample
+  version: 1.0.0
+  description: 書籍「つくりながら学ぶ！ドメイン駆動設計入門」のAPI仕様
+paths:
+  /book/{isbn}/recommendations:
+    get:
+      summary: 中核ユースケース - 推薦書籍タイトルの取得
+      description: 中核ユースケース - レビュー内容から推薦書籍を取得
+      operationId: getRecommendations
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          description: BookId(ISBN)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - book
+                properties:
+                  ok:
+                    $ref: '#/components/schemas/OkBoolean'
+                  book:
+                    $ref: '#/components/schemas/Book'      
+        '500':
+          description: 失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkBoolean'
+  /book:
+    post:
+      summary: 書籍登録
+      description: 新しい書籍情報を登録する
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Book'
+      responses:
+        '201':
+          description: 正常に登録されました
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - book
+                properties:
+                  ok:
+                    $ref: '#/components/schemas/OkBoolean'
+                  book:
+                    $ref: '#/components/schemas/Book'      
+  /book/{isbn}/review:
+    post:
+      summary: レビュー投稿
+      description: isbnの書籍に対するレビュー投稿
+      operationId: postReview
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OKReview'
+      responses:
+        '201':
+          description: 正常に登録されました
+          content:
+            application/json/:
+              schema:
+                $ref: '#/components/schemas/OKReview'
+        '500':
+          description: 失敗しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkBoolean'
+  /review/{reviewId}:
+    put:
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+      responses:
+        '200':
+          description: 正常に登録されました
+          content:
+            application/json/:
+              schema:
+                $ref: '#/components/schemas/OKReview'
+        '500':
+          description: 登録に失敗しまた
+          content:
+            application/json/:
+              schema:
+                $ref: '#/components/schemas/FalseMessage'
+  /review/{delReviewId}:
+    delete:
+      parameters:
+        - name: delReviewId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除に成功したためボディなしでステータスコードのみ返却
+        '500':
+          description: 削除に失敗しまた
+          content:
+            application/json/:
+              schema:
+                $ref: '#/components/schemas/FalseMessage'
+
+# 構造体定義
+components:
+  schemas:
+    Book:
+      type: object
+      properties:
+        isbn:
+          type: string
+          description: 国際標準図書番号（例 "978-4-00-000000-0"）
+        title:
+          type: string
+          description: 書籍のタイトル
+        author:
+          type: string
+          description: 著者名
+        price:
+          type: integer
+          description: 価格（円）
+    OkBoolean:
+      type: object
+      properties:
+        ok:
+          type: boolean
+    FalseMessage:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          description: レビューID
+        bookId:
+          type: string
+          description: Book オブジェクトのID(ISBN)
+        name:
+          type: string
+          description: 投稿者名
+        rating:
+          type: number
+          description: レビューの信頼度
+        comment:
+          type: [string, "null"]
+          description: レビューのコメント
+    OKReview:
+      type: object
+      required:
+        - ok
+        - book
+      properties:
+        ok:
+          type: boolean
+        book:
+          $ref: '#/components/schemas/Review'
+
+
+
+
+
+

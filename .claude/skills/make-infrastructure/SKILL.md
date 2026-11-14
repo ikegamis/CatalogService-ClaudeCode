@@ -37,6 +37,8 @@ Domain / Application が定義したポートを実装し、InMemory および P
 - Outbox を実装する場合、業務データ更新との同一トランザクション、未送信抽出、ロック、再試行、重複配信への対処を明確にする。
 - CQRS の Read Model は更新モデルと別の要件がある場合に限って実装する。
 - 接続文字列や秘密情報をコードにハードコードしない。
+- 対象がSQLの場合、スキーマ定義を行う `src/Inrastructure/SQL/schema.sql' を作成すること。
+- 対象がSQLの場合でマイグレーションがある場合、マイグレーションを行うための スクリプト `src/Inrastructure/SQL/migrations.ts' を作成すること
 
 ## テスト要件
 

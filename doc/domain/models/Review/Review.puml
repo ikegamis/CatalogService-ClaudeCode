@@ -1,0 +1,66 @@
+@startuml AggregateReview
+package "レビュー集約" {
+  class Review <<Aggregate Root>> {
+    + reviewId: ReviewId
+    + bookId: BookId
+    + name: Name
+    + rating: Rating
+    + comment: Comment
+    + extractRecommendedBooks(): string[]
+    + isTrustworthy(threshold: number): boolean
+  }
+
+  class ReviewId <<Value Object>> {
+    + value: string
+  }
+  class Name <<Value Object>> {
+    + value: string
+  }
+  class Rating <<Value Object>> {
+    + value: number
+    + getQualityFactor(): number
+  }
+  class Comment <<Value Object>> {
+    + value: string
+    + extractMatches(pattern: RegExp): string[]
+    + getQualityFactor(): number
+  }
+
+  Review *-- ReviewId
+  Review *-- Name
+  Review *-- Rating
+  Review *-- Comment
+
+  note right of Review
+    extractRecommendedBooks:
+    コメントから前提書籍タイトルを抽出する。
+
+    isTrustworthy:
+    Rating と Comment の品質を組み合わせ、
+    threshold と比較して信頼性を判定する。
+
+    スコア合成式・比較演算子は未確定。
+  end note
+
+  note bottom of Name
+    MIN_LENGTH = 1
+    MAX_LENGTH = 50
+  end note
+
+  note bottom of Rating
+    Integer: 1..5
+    qualityFactor = (value - 1) / 4
+  end note
+
+  note bottom of Comment
+    MIN_LENGTH = 1
+    MAX_LENGTH = 1000
+    不適切コメントは作成不可。
+
+    Quality factor:
+    < 10 chars: 0.2
+    10..100 chars: linear 0.2..1.0
+    >= 100 chars: 1.0
+  end note
+}
+@enduml

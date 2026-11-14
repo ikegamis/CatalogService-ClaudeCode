@@ -1,0 +1,53 @@
+@startuml AggregateBook
+
+package "書籍集約" {
+  class Book <<Aggregate Root>> {
+    + bookId: BookId
+    + title: Title
+    + author: Author
+    + price: Price
+  }
+
+  class BookId <<Value Object>> {
+    + value: string
+  }
+  class Title <<Value Object>> {
+    + value: string
+  }
+  class Author <<Value Object>> {
+    + value: string
+  }
+  class Price <<Value Object>> {
+    + value: number
+  }
+
+  Book *-- BookId
+  Book *-- Title
+  Book *-- Author
+  Book *-- Price
+
+  note bottom of BookId
+    ISBNコードを適用する。
+    ISBNコードは、ISBNのあとに数字で「978」、
+    さらにグループ（国・地域）番号（日本は4）、出版社番号、書名番号、の合計12桁の数字を並べ、
+    最後にこの12桁の数字を特定の計算式で演算して得た1桁のチェック用の数を付け加えたコード。
+  end note
+
+  note bottom of Title
+    MIN_LENGTH = 1
+    MAX_LENGTH = 1000
+  end note
+
+  note bottom of Author
+    MIN_LENGTH = 1
+    MAX_LENGTH = 100
+  end note
+
+  note bottom of Price
+    Currency: JPY
+    MIN = 1
+    MAX = 1,000,000
+  end note
+}
+@enduml
+
