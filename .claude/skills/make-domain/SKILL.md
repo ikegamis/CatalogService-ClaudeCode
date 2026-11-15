@@ -1,6 +1,6 @@
 ---
 name: make-domain
-description: doc/models の Markdown / PlantUML を根拠に Domain 層のモデルと単体テストを実装・検証する
+description: doc/models の Markdown / PlantUML / mermaid を根拠に Domain 層のモデルと単体テストを実装・検証する
 ---
 
 # make-domain
@@ -12,20 +12,22 @@ description: doc/models の Markdown / PlantUML を根拠に Domain 層のモデ
 ## 入力・対象範囲
 
 - 引数で対象機能・集約・ドキュメントが指定された場合は、その範囲を対象とする。
-- 指定がない場合は、`doc/models/` を調査し、実装可能なモデルを特定する。ただし、複数の独立した集約・機能を一度に実装せず、対象候補を提示して確認する。
+- 指定がない場合は、`doc/domain/models/` を調査し、実装可能なモデルを特定する。ただし、複数の独立した集約・機能を一度に実装せず、対象候補を提示して確認する。
 - 参照する共通用語集、コンテキストマップ、関連集約の定義も読む。
 
 ## 手順
 
-1. `CLAUDE.md` と対象の Markdown / PlantUML を読む。
+1. `CLAUDE.md` と対象の Markdown / PlantUML / mermaid を読む。
+
 2. 既存の `src/Domain` と `test/Domain`、`package.json`、TypeScript/Jest設定を確認する。
 3. 実装前に次のモデル要素を整理する。
-   - 集約、集約ルート、境界
-   - エンティティと識別子
-   - 値オブジェクトと生成時検証
-   - 不変条件、状態遷移、振る舞い
-   - ドメインサービス、ドメインイベント
-   - 他集約との参照関係
+  - 集約、集約ルート、境界
+  - エンティティと識別子
+  - 値オブジェクトと生成時検証
+  - 不変条件、状態遷移、振る舞い
+  - リポジトリに対する振る舞いがあったら Interface としてオブジェクトとは別に定義する
+  - ドメインサービス、ドメインイベント
+  - 他集約との参照関係
 4. ドキュメントの矛盾・不足・曖昧さを検出する。実装の正しさに影響する未確定事項があれば、コードを作らず質問する。軽微な命名上の不明点は既存規約に合わせ、判断を報告する。
 5. `src/Domain/Models`、`Services`、`Shared` に適切なサブフォルダを作成して実装する。
 6. `test/Domain` にモデルと対応するテストを作成する。
@@ -43,6 +45,7 @@ description: doc/models の Markdown / PlantUML を根拠に Domain 層のモデ
 - ドメインイベントは仕様に明記された事実のみ実装する。
 - 仕様にない getter、setter、状態、バリデーション、イベントを推測で追加しない。
 - `any`、型アサーションによる強引な回避、無意味な抽象化を避ける。
+- 値オブジェクトの場合、`./ValueObject.ts` から派生させること
 
 ## テスト要件
 
