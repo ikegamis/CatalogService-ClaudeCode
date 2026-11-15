@@ -11,12 +11,10 @@
   - 参照：[Domain](/CLAUDE.md#domain)
 - doc/application
   - アプリケーション層の仕様・定義が書かれたファイルの格納フォルダ
-  - 参照：[Domain](/CLAUDE.md#application)
+  - 参照：[Application](/CLAUDE.md#application)
 - doc/infrastructure
   - インフラストラクチャ層の仕様・定義が書かれたファイルの格納フォルダ
-  - 参照：[Domain](/CLAUDE.md#infrastructure)
+  - 参照：[Infrastructure](/CLAUDE.md#infrastructure)
 - doc/presentation
   - プレゼンテーション層の仕様・定義が書かれたファイルの格納フォルダ
-  - 参照：[Domain](/CLAUDE.md#presentation)
-
-
+  - 参照：[Presentation](/CLAUDE.md#presentation)
