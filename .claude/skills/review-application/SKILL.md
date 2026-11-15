@@ -12,7 +12,7 @@ Application 層がユースケースを正しくオーケストレーション�
 ## 対象資料
 
 - `CLAUDE.md`
-- 対象 `doc/models/` の Markdown / PlantUML / ユースケース定義
+- 対象 `doc/models/` の Markdown / PlantUML / mermaid / ユースケース定義
 - `src/Domain`、`test/Domain`
 - `src/Application`、`test/Application`
 

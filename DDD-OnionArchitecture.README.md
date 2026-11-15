@@ -39,7 +39,7 @@ Claude Code は `.claude/skills/<skill-name>/SKILL.md` をプロジェクトス�
 ## 運用上の重要事項
 
 - 人間が作成した `doc/models/` を仕様の正とします。
-- Markdown と PlantUML の矛盾、仕様不足が実装に影響する場合は、Claude Code に推測させず確認します。
+- Markdown と PlantUML / mermaid の矛盾、仕様不足が実装に影響する場合は、Claude Code に推測させず確認します。
 - 各 `review-*` は原則としてコードを変更せず、指摘と修正方針を報告します。
 - Critical / High の指摘を解消してから次の層に進みます。
 - 実際の `package.json`、Jest / ESLint / TypeScript 設定がキットの想定と異なる場合は、リポジトリの実設定を優先します。

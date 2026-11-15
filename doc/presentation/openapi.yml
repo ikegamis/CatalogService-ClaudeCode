@@ -93,7 +93,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OkBoolean'
-  /review/{reviewId}:
     put:
       parameters:
         - name: isbn
@@ -120,7 +119,6 @@ paths:
             application/json/:
               schema:
                 $ref: '#/components/schemas/FalseMessage'
-  /review/{delReviewId}:
     delete:
       parameters:
         - name: delReviewId

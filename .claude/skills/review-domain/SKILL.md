@@ -11,7 +11,7 @@ description: ドメイン定義と Domain 実装・テストを照合し、DDD�
 
 ## 手順
 
-1. `CLAUDE.md` と対象 Markdown / PlantUML を読む。
+1. `CLAUDE.md` と対象 Markdown / PlantUML / mermaid を読む。
 2. 対象の Domain 実装・テスト、および関連する共通モデルを読む。
 3. ドキュメントの各要素をコード・テストに対応づける。
 4. 以下の観点で問題を特定する。
@@ -24,7 +24,7 @@ description: ドメイン定義と Domain 実装・テストを照合し、DDD�
 - エンティティ、値オブジェクト、集約、識別子、関連、多重度が定義と一致しているか
 - 不変条件、状態遷移、業務ルールが漏れなく実装されているか
 - ドキュメントにない仕様を追加していないか
-- Markdown と PlantUML の矛盾を見落としていないか
+- Markdown と PlantUML / mermaid の矛盾を見落としていないか
 
 ### DDD
 - 集約境界とトランザクション整合性の考え方が妥当か

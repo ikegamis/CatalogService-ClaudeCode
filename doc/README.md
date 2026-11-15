@@ -1,11 +1,11 @@
 # 書籍レビュー管理システム ドメインモデル定義
 
-このディレクトリは、Claude Code DDD WebAPI Kit の `doc/models/` に配置する人間作成の入力資料サンプルです。
+このディレクトリは、Claude Code DDD WebAPI Kit の `doc/domain/` に配置する人間作成の入力資料サンプルです。
 
 ## ファイル構成
 
 ```text
-doc/models/
+doc/domain/
 ├─ README.md
 ├─ glossary.md
 ├─ context-map.md
@@ -21,7 +21,7 @@ doc/models/
 - Review は BookId によって対象書籍を参照する。
 - 書籍推薦は、対象書籍に関するレビューを複数取得し、信頼性判定・前提書籍抽出・言及頻度集計を行うユースケースとして整理する。
 
-元のPlantUMLは「カタログドメインモデル」として2つの集約を同じ図に記載しているため、このサンプルでは `catalog/` を1つのモデル領域として整理している。ただし、これが正式な Bounded Context 境界であるかは元資料だけでは確定できない。詳細は `context-map.md` を参照する。
+元のPlantUML/mermaidは「カタログドメインモデル」として2つの集約を同じ図に記載しているため、このサンプルでは `catalog/` を1つのモデル領域として整理している。ただし、これが正式な Bounded Context 境界であるかは元資料だけでは確定できない。詳細は `context-map.md` を参照する。
 
 ## Claude Code での実行例
 

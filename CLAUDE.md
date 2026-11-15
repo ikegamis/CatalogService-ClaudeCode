@@ -4,7 +4,7 @@
 
 本リポジトリは、DDD（ドメイン駆動設計）とオニオンアーキテクチャに基づく TypeScript WebAPI を、Claude Code と人間が段階的に設計・実装・検証するための共通ルールを定義する。
 
-人間が `doc/models/` に Markdown / PlantUML でドメイン知識とモデルを定義し、Claude Code はその内容を根拠として各層を実装する。仕様にない業務ルール、属性、状態遷移、API仕様を推測で追加してはならない。
+人間が `doc/models/` に Markdown / PlantUML / mermaid でドメイン知識とモデルを定義し、Claude Code はその内容を根拠として各層を実装する。仕様にない業務ルール、属性、状態遷移、API仕様を推測で追加してはならない。
 
 ## 2. 技術スタック
 
@@ -79,7 +79,7 @@
 ### Infrastructure
 
 - Repository、EventStore、Outbox、外部サービス等のポート実装を配置する。
-- `InMemory/` はテスト・ローカル用途の実装、`SQL/` は PostgreSQL 等の SQL 実装を配置する。
+- `src/Infrastructure/InMemory/` フォルダはテスト・ローカル用途の実装、`src/Infrastructure/SQL/` フォルダは PostgreSQL 等の SQL 実装を配置する。
 - SQL、DBドライバー、接続プール、シリアライズ、マイグレーションなどの技術詳細を閉じ込める。
 - Domain / Application のポートを実装し、内側の層に依存しない。
 
@@ -120,8 +120,8 @@ Infrastructure ───┼──> Application ───> Domain
 
 ## 5. ドメイン設計の原則
 
-1. `doc/models/` の人間作成ドキュメントを仕様の正とする。
-2. Markdown と PlantUML の記述に矛盾がある場合、勝手に優先順位を決めず、矛盾箇所を列挙して確認する。
+1. `doc/` の人間が作成したドキュメントを仕様の正とする。
+2. Markdown と PlantUML/mermaid の記述に矛盾がある場合、勝手に優先順位を決めず、矛盾箇所を列挙して確認する。
 3. 集約境界、集約ルート、エンティティ、値オブジェクト、識別子、不変条件、状態遷移、ドメインイベントを明確にする。
 4. 値オブジェクトは可能な限り不変（immutable）にする。
 5. コンストラクターやファクトリで不正な状態を生成できないようにする。
@@ -133,7 +133,7 @@ Infrastructure ───┼──> Application ───> Domain
 
 ## 6. ドキュメントの読み込み方
 
-- 作業対象に関係する `doc/models/` の Markdown / PlantUML を最初に列挙し、内容を読む。
+- 作業対象に関係する `doc/domain/models/` の Markdown / PlantUML / mermaid を最初に列挙し、内容を読む。
 - 機能単位の作業では、対象機能の仕様だけでなく、参照する他の集約・共通モデル・用語集も確認する。
 - PlantUML は図の見た目だけでなく、関連、集約境界、多重度、継承、注記を読む。
 - ドキュメントに記載されたファイル名・モデル名・用語を尊重する。
@@ -143,7 +143,7 @@ Infrastructure ───┼──> Application ───> Domain
 推奨ドキュメント構成例：
 
 ```text
-doc/models/
+doc/domain/models/
 ├─ glossary.md
 ├─ context-map.md
 ├─ customer/
@@ -155,7 +155,7 @@ doc/models/
    └─ order-aggregate.puml
 ```
 
-これは例であり、既存の構成を強制的に変更しない。
+※これは例であり、既存の構成を強制的に変更しない。
 
 ## 7. コーディング規約
 
