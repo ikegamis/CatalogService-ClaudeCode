@@ -12,5 +12,5 @@
 テンプレート化された暁には、人手作業はドメイン定義だけになり、コスト省略化と作業の集中化(品質向上)が見込まれる。
 
 ## DDD WebAPI Set
-初回のスキルセットは [README.md](./README2.md) と `.claude/skills` 内である。
+初回のスキルセットは [README.md](./DDD-OnionArchitecture.README.md) と `.claude/skills` 内である。
 なお、今回のスキル作成は ChatGPT に依頼した。ただし依頼内容を作成するのに30分ほど費やした。
