@@ -53,6 +53,18 @@ describe("Name", () => {
       expect(Name.anonymous().value).toBe("名無し");
     });
 
+    it("orAnonymous は null なら既定値「名無し」を返す", () => {
+      expect(Name.orAnonymous(null).value).toBe("名無し");
+    });
+
+    it("orAnonymous は文字列なら trim した Name を返す", () => {
+      expect(Name.orAnonymous(" 山田 ").value).toBe("山田");
+    });
+
+    it("orAnonymous でも文字列が制約違反なら生成できない（空白のみは匿名扱いにしない）", () => {
+      expect(() => Name.orAnonymous("   ")).toThrow(DomainValidationError);
+    });
+
     it("匿名投稿の投稿者名はすべて同一投稿者とみなす", () => {
       expect(Name.anonymous().equals(Name.anonymous())).toBe(true);
       expect(Name.anonymous().equals(new Name("名無し"))).toBe(true);
