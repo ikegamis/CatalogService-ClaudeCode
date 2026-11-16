@@ -75,6 +75,15 @@ describe("RegisterReviewService（UC-REVIEW-001 レビューの登録）", () =>
     expect(result.ok).toBe(true);
   });
 
+  it("投稿者名・コメントを省略した場合は「名無し」・コメントなしで登録する", async () => {
+    const { service } = setup();
+
+    const result = await service.execute({ bookId: BOOK_ID, rating: 4 });
+
+    expect(result.ok && result.data.name).toBe("名無し");
+    expect(result.ok && result.data.comment).toBeNull();
+  });
+
   it("書籍が登録されていなければ保存せず BOOK_NOT_FOUND を返す", async () => {
     const { service, reviewRepository, tx } = setup([]);
 

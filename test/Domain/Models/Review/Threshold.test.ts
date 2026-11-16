@@ -21,6 +21,11 @@ describe("Threshold", () => {
         expect(() => new Threshold(value)).toThrow(DomainValidationError);
       },
     );
+
+    it.each(["0.5", null, undefined])("数値でない値（%p）は生成できない", (value) => {
+      // 型注釈を迂回した実行時の入力（HTTP 由来など）を想定する
+      expect(() => new Threshold(value as unknown as number)).toThrow(DomainValidationError);
+    });
   });
 
   describe("既定値", () => {

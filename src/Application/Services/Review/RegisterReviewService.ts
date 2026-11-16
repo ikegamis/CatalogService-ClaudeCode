@@ -13,11 +13,11 @@ import { ReviewDto, toReviewDto } from "./ReviewDto";
 export type RegisterReviewCommand = {
   /** レビュー対象の書籍ID（ISBN）。 */
   bookId: string;
-  /** 投稿者名。null の場合は匿名投稿として既定値「名無し」を用いる。 */
-  name: string | null;
+  /** 投稿者名。省略または null の場合は匿名投稿として既定値「名無し」を用いる。 */
+  name?: string | null;
   rating: number;
-  /** レビューテキスト。null の場合はコメントなし。 */
-  comment: string | null;
+  /** レビューテキスト。省略または null の場合はコメントなし。 */
+  comment?: string | null;
 };
 
 /** UC-REVIEW-001 レビューの登録。 */
@@ -32,9 +32,9 @@ export class RegisterReviewService {
     const parsed = parseInput(() =>
       Review.create(
         new BookId(command.bookId),
-        Name.orAnonymous(command.name),
+        Name.orAnonymous(command.name ?? null),
         new Rating(command.rating),
-        command.comment === null ? null : new Comment(command.comment),
+        command.comment == null ? null : new Comment(command.comment),
       ),
     );
     if (!parsed.ok) {

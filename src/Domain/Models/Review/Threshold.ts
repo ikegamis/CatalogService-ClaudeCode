@@ -19,8 +19,9 @@ export class Threshold extends ValueObject<ThresholdValue, "Threshold"> {
   }
 
   protected validate(value: ThresholdValue): void {
+    // 数値でない値は拒否する（Review.md「Threshold の制約」）。型注釈は実行時に効かず、"0.5" のような文字列は比較で暗黙に数値化されて通ってしまうため。
     // 比較の否定で判定するため NaN も拒否される
-    if (!(value >= Threshold.MIN && value <= Threshold.MAX)) {
+    if (typeof value !== "number" || !(value >= Threshold.MIN && value <= Threshold.MAX)) {
       throw new DomainValidationError(
         `Thresholdは${Threshold.MIN}以上${Threshold.MAX}以下である必要があります。`,
       );

@@ -215,6 +215,7 @@ classDiagram
 - 別のレビューと同一かどうかは`ReviewId`の持つ値を比較する
 - 1件の Review は1つの BookId を持つ。
 - Review は Book 集約を直接保持せず、BookId で参照する。
+- レビューの更新（UC-REVIEW-002）は、既存レビューと同じ `ReviewId` で更新後の Review を構築し直し、`ReviewId` 以外の属性（BookId、Name、Rating、Comment）を入力値で置き換える方式とする。そのため BookId・Rating を個別に変更する振る舞いは定義しない。
 - 書籍推薦は複数 Review の取得・フィルタリング・集計を伴う。`Review.isTrustworthy` と `Review.extractRecommendedBooks` は個々の Review の振る舞いであり、複数レビューを横断する取得・集計のオーケストレーションを Review 集約に持たせない。
 
 ## 未確定事項
