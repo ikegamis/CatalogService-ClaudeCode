@@ -13,7 +13,7 @@ classDiagram
             +Rating rating
             +Comment comment
             +extractRecommendedBooks() string[]
-            +isTrustworthy(threshold: number) boolean
+            +isTrustworthy(threshold: Threshold) boolean
         }
 
         class ReviewId {
@@ -37,6 +37,11 @@ classDiagram
             +string value
             +extractMatches(pattern: RegExp) string[]
             +getQualityFactor() number
+        }
+
+        class Threshold {
+            <<Value Object>>
+            +number value
         }
     }
     namespace 書籍集約 {
@@ -70,12 +75,12 @@ classDiagram
 | ReviewId | ○ | string | 26文字 | ✗ |
 | BookId | ○ | Book集約の BookId | ― | ✗ |
 | Name | ○ | string | 1〜50文字 | ✗ |
-| Rating | ✗ | number | 1〜5 | ✗ |
+| Rating | ○ | number | 1〜5 | ✗ |
 | Comment | ○ | string | 1〜1000文字 | ○ |
+| Threshold | ○ | number | 0〜1.0 | ✗ |
 
 ※ 文字数は全て string.length プロパティを用いる
-  - 評価値を `
-  - 評価の重みを0.7、コメントの重みを0.3とし、`(評価. * 0.7) + (コメント * 0.3) >= threshold` を`信頼性スコア`とする
+※ Threshold は Review の属性ではなく、`isTrustworthy` の引数として用いる値オブジェクト
 
 ### ReviewId の制約
 
@@ -90,10 +95,14 @@ classDiagram
 - 使用可能文字はUTF-8
 - 今回はID管理を行わないので Name が同じなら同じユーザーとみなす
 - 匿名投稿を許す
+  - 投稿者名が省略された場合は、既定値 `名無し` を Name とする（Name は NULL にしない）
+  - Name が同じなら同じユーザーとみなすため、匿名投稿はすべて同一投稿者 `名無し` として扱われる
 
 ### Rating の制約
 
-- value プロパティを持ち、0.0 〜 1.0 の値を取る
+- 値オブジェクトとする
+- value プロパティは 1〜5 の整数を取る
+- `getQualityFactor()` の戻り値（品質係数）が 0.0 〜 1.0 の値を取る
 
 #### Rating の振る舞い
 
@@ -125,6 +134,12 @@ classDiagram
   - グローバルフラグが設定されていない場合は設定する
 - 文字数の数え方（Unicodeコードポイント、UTF-16コード単位、書記素クラスタ等）は string.length を用いる
 
+### Threshold の制約
+
+- 信頼性の閾値を表す値オブジェクトとする
+- value プロパティは 0 以上 1.0 以下の数値を取る。範囲外または数値でない値（NaN 等）はエラーとする
+- 既定値は 0.6
+
 ## Review の振る舞い
 
 ### `updateName(name: string) : void`
@@ -146,12 +161,15 @@ classDiagram
     - 前提書籍であるための条件
       - 前提書籍名はコメント内の`『`、`』`で囲まれた文字列、かつ、その文字列から後の30文字以内にある推薦キーワードがあれば前提本とみなす
         - 推薦キーワード：`読む`、`読んだ`、`学ぶ`、`学んだ`、`必要`、推奨`、`おすすめ`、`良い`、`いい`,`理解`
-    - コメントされた書籍集約オブジェクト配列内に当該書籍名が前提書籍として入っていたら除外する
-  - 残った前提書籍名の配列を戻り値とする
+        - 推薦キーワード全体が `』` の直後から30文字以内に収まる場合に限る（キーワードの末尾が30文字を超える場合は対象外）
+    - 同一コメント内で同じ前提書籍名が複数回出現した場合は、出現ごとに配列に含める（重複を除外しない）
+    - 対象書籍自身の除外は Review では行わず、書籍推薦サービス（[BookRecommendationService](../../services/BookRecommendationService.md)）で行う
+  - 前提書籍名の配列を出現順に戻り値とする
 
-### `isTrustworthy(threshold: number = 0.6): boolean`
+### `isTrustworthy(threshold: Threshold = 既定値 0.6): boolean`
 - 機能：このレビューが信頼できるかを判断
 - 戻り値：信頼できる場合は true、信頼できないならfalse
+- 引数 `threshold`：Threshold 値オブジェクト（0 以上 1.0 以下。値域の検証は Threshold の生成時に行う）
 - アルゴリズム概要
   - 評価品質とコメント品質を組み合わせて信頼性スコアを計算し、thresholdの比較結果を返す
 - アルゴリズム詳細
@@ -161,10 +179,11 @@ classDiagram
 ### `calculateReliability(): number`
 - コメントの信頼性スコアを取得する
 - アルゴリズム詳細
-  1. コメントがない場合、レートのみで判断する
+  1. コメントがない場合、コメントの評価値を 0 とする（信頼性スコア = レートの評価値 × 0.7）
   2. レートの評価値を `rating.getQualityFactor()`、コメントの評価値を `comment.getQualityFactor()`とする
   3. レートの評価の重みを0.7、コメントの重みを0.3とし、`(レートの評価値. * 0.7) + (コメントの評価値 * 0.3)` を`信頼性スコア`とする
-  4. `信頼性スコア` を戻り値とする
+  4. `信頼性スコア` を小数点以下2桁に丸める（四捨五入）。浮動小数点の誤差で閾値との比較結果が変わらないようにするため
+  5. 丸めた `信頼性スコア` を戻り値とする
 
 ## リポジトリに対する振る舞い
 
@@ -192,7 +211,8 @@ classDiagram
 
 ## 制約
 
-- レビュー集約は一度生成したら削除することはできない
+- レビュー集約は削除できる（UC-CATALOG-003 レビューの削除）
+- 別のレビューと同一かどうかは`ReviewId`の持つ値を比較する
 - 1件の Review は1つの BookId を持つ。
 - Review は Book 集約を直接保持せず、BookId で参照する。
 - 書籍推薦は複数 Review の取得・フィルタリング・集計を伴う。`Review.isTrustworthy` と `Review.extractRecommendedBooks` は個々の Review の振る舞いであり、複数レビューを横断する取得・集計のオーケストレーションを Review 集約に持たせない。
