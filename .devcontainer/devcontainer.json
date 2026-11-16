@@ -1,0 +1,17 @@
+{
+  "name": "My Dev Container",
+  "image": "://microsoft.com",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode-remote.remote-containers",
+        "Anthropic.claude-code",
+        "ms-azuretools.vscode-containers",
+        "dbaeumer.vscode-eslint",
+        "jebbs.plantuml",
+        "humao.rest-client",
+        "TypeScriptTeam.native-preview"
+      ]
+    }
+  }
+}
