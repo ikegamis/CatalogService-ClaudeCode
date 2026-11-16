@@ -61,6 +61,30 @@ describe("UpdateReviewService（UC-REVIEW-002 レビューの更新）", () => {
     expect(result.ok && result.data).toEqual({ ...command, name: "名無し", comment: null });
   });
 
+  it("投稿者名・コメントを省略した場合も null と同じく「名無し」・コメントなしに更新する", async () => {
+    const { service } = setup();
+    const { name: _name, comment: _comment, ...omitted } = command;
+
+    const result = await service.execute(omitted);
+
+    expect(result.ok && result.data).toEqual({ ...command, name: "名無し", comment: null });
+  });
+
+  it("検索後に別セッションで削除されていた場合、update は何もせずレビューを作り直さない", async () => {
+    const { service, reviewRepository } = setup();
+    // findById の直後に別セッションが同じレビューを削除した状況を再現する
+    const originalFindById = reviewRepository.findById.bind(reviewRepository);
+    jest.spyOn(reviewRepository, "findById").mockImplementation(async (reviewId) => {
+      const found = await originalFindById(reviewId);
+      reviewRepository.reviews.delete(reviewId.value);
+      return found;
+    });
+
+    await service.execute(command);
+
+    expect(reviewRepository.reviews.has(REVIEW_ID)).toBe(false);
+  });
+
   it("レビューIDが登録されていなければ更新せず REVIEW_NOT_FOUND を返す", async () => {
     const { service, reviewRepository, tx } = setup();
     const unknownId = ReviewId.generate().value;

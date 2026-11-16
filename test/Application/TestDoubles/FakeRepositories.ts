@@ -64,9 +64,12 @@ export class FakeReviewRepository implements IReviewRepository {
     this.reviews.set(review.reviewId.value, review);
   }
 
+  /** ポートの契約どおり、該当するレビューがなければ何もしない（作り直さない）。 */
   async update(review: Review): Promise<void> {
     this.record("update");
-    this.reviews.set(review.reviewId.value, review);
+    if (this.reviews.has(review.reviewId.value)) {
+      this.reviews.set(review.reviewId.value, review);
+    }
   }
 
   async delete(reviewId: ReviewId): Promise<void> {

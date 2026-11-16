@@ -95,10 +95,26 @@ describe("RecommendBooksService（UC-CATALOG-001 書籍推薦）", () => {
     expect(reviewRepository.calls).toEqual([]);
   });
 
-  it("リポジトリが失敗したら例外を伝播する", async () => {
+  it("レビューリポジトリが失敗したら例外を伝播する", async () => {
     const { service, reviewRepository } = setup();
     reviewRepository.failOn = "findAllByBookId";
 
     await expect(service.execute({ bookId: BOOK_ID })).rejects.toThrow("review repository findAllByBookId failed");
+  });
+
+  it("書籍リポジトリが失敗したら例外を伝播し、レビューを取得しない", async () => {
+    const { service, bookRepository, reviewRepository } = setup();
+    bookRepository.failOn = "findById";
+
+    await expect(service.execute({ bookId: BOOK_ID })).rejects.toThrow("book repository findById failed");
+    expect(reviewRepository.calls).toEqual([]);
+  });
+
+  it("閾値が数値でない（文字列）なら VALIDATION_ERROR を返す", async () => {
+    const { service } = setup();
+
+    const result = await service.execute({ bookId: BOOK_ID, threshold: "0.5" as unknown as number });
+
+    expect(!result.ok && result.error.code).toBe("VALIDATION_ERROR");
   });
 });
