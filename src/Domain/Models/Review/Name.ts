@@ -23,6 +23,11 @@ export class Name extends ValueObject<NameValue, "Name"> {
     return new Name(Name.ANONYMOUS_VALUE);
   }
 
+  /** 投稿者名が省略された場合（null）は匿名投稿の既定値「名無し」を、それ以外は入力値の Name を返す。 */
+  static orAnonymous(value: string | null): Name {
+    return value === null ? Name.anonymous() : new Name(value);
+  }
+
   protected validate(value: NameValue): void {
     if (value.length < Name.MIN_LENGTH || value.length > Name.MAX_LENGTH) {
       throw new DomainValidationError(

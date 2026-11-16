@@ -16,6 +16,14 @@ paths:
           description: BookId(ISBN)
           schema:
             type: string
+        - name: threshold
+          in: query
+          required: false
+          description: レビュー信頼性の閾値（0 以上 1.0 以下）。省略時は既定値 0.6
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1
       responses:
         '200':
           description: 成功
@@ -25,18 +33,21 @@ paths:
                 type: object
                 required:
                   - ok
-                  - book
+                  - recommendedBooks
                 properties:
                   ok:
-                    $ref: '#/components/schemas/OkBoolean'
-                  book:
-                    $ref: '#/components/schemas/Book'      
+                    type: boolean
+                  recommendedBooks:
+                    type: array
+                    description: 言及頻度順の推薦書籍名
+                    items:
+                      type: string
         '500':
           description: 失敗
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OkBoolean'
+                $ref: '#/components/schemas/FalseMessage'
   /book:
     post:
       summary: 書籍登録
@@ -60,44 +71,49 @@ paths:
                   - book
                 properties:
                   ok:
-                    $ref: '#/components/schemas/OkBoolean'
+                    type: boolean
                   book:
-                    $ref: '#/components/schemas/Book'      
-  /book/{isbn}/review:
+                    $ref: '#/components/schemas/Book'
+        '500':
+          description: 登録に失敗しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FalseMessage'
+  /review:
     post:
       summary: レビュー投稿
-      description: isbnの書籍に対するレビュー投稿
+      description: リクエストボディの bookId の書籍に対するレビュー投稿
       operationId: postReview
-      parameters:
-        - name: isbn
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OKReview'
+              $ref: '#/components/schemas/ReviewRequest'
       responses:
         '201':
           description: 正常に登録されました
           content:
-            application/json/:
+            application/json:
               schema:
                 $ref: '#/components/schemas/OKReview'
         '500':
-          description: 失敗しました
+          description: 登録に失敗しました
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OkBoolean'
+                $ref: '#/components/schemas/FalseMessage'
+  /review/{id}:
     put:
+      summary: レビュー更新
+      description: レビューID以外の入力情報でレビューを更新する
+      operationId: putReview
       parameters:
-        - name: isbn
+        - name: id
           in: path
           required: true
+          description: レビューID
           schema:
             type: string
       requestBody:
@@ -105,34 +121,50 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Review'
+              $ref: '#/components/schemas/ReviewRequest'
       responses:
         '200':
-          description: 正常に登録されました
+          description: 正常に更新されました
           content:
-            application/json/:
+            application/json:
               schema:
                 $ref: '#/components/schemas/OKReview'
         '500':
-          description: 登録に失敗しまた
+          description: 更新に失敗しました
           content:
-            application/json/:
+            application/json:
               schema:
                 $ref: '#/components/schemas/FalseMessage'
     delete:
+      summary: レビュー削除
+      operationId: deleteReview
       parameters:
-        - name: delReviewId
+        - name: id
           in: path
           required: true
+          description: レビューID
           schema:
             type: string
       responses:
-        '204':
-          description: 削除に成功したためボディなしでステータスコードのみ返却
-        '500':
-          description: 削除に失敗しまた
+        '200':
+          description: 正常に削除されました
           content:
-            application/json/:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - message
+                properties:
+                  ok:
+                    type: boolean
+                  message:
+                    type: string
+                    description: "'{レビューID}' は削除されました"
+        '500':
+          description: 削除に失敗しました
+          content:
+            application/json:
               schema:
                 $ref: '#/components/schemas/FalseMessage'
 
@@ -141,10 +173,15 @@ components:
   schemas:
     Book:
       type: object
+      required:
+        - isbn
+        - title
+        - author
+        - price
       properties:
         isbn:
           type: string
-          description: 国際標準図書番号（例 "978-4-00-000000-0"）
+          description: 国際標準図書番号（13文字。例 "9784000000000"）
         title:
           type: string
           description: 書籍のタイトル
@@ -154,20 +191,44 @@ components:
         price:
           type: integer
           description: 価格（円）
-    OkBoolean:
-      type: object
-      properties:
-        ok:
-          type: boolean
     FalseMessage:
       type: object
+      required:
+        - ok
+        - message
       properties:
         ok:
           type: boolean
         message:
           type: string
+          description: エラー理由
+    ReviewRequest:
+      type: object
+      description: レビューの登録・更新リクエスト
+      required:
+        - bookId
+        - rating
+      properties:
+        bookId:
+          type: string
+          description: Book オブジェクトのID(ISBN)
+        name:
+          type: [string, "null"]
+          description: 投稿者名。省略または null の場合は匿名投稿として「名無し」とする
+        rating:
+          type: integer
+          description: 評価（1〜5）
+        comment:
+          type: [string, "null"]
+          description: レビューのコメント。省略または null の場合はコメントなし
     Review:
       type: object
+      required:
+        - id
+        - bookId
+        - name
+        - rating
+        - comment
       properties:
         id:
           type: string
@@ -179,8 +240,8 @@ components:
           type: string
           description: 投稿者名
         rating:
-          type: number
-          description: レビューの信頼度
+          type: integer
+          description: 評価（1〜5）
         comment:
           type: [string, "null"]
           description: レビューのコメント
@@ -188,15 +249,9 @@ components:
       type: object
       required:
         - ok
-        - book
+        - review
       properties:
         ok:
           type: boolean
-        book:
+        review:
           $ref: '#/components/schemas/Review'
-
-
-
-
-
-

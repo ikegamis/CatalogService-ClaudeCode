@@ -1,6 +1,8 @@
 {
   "name": "My Dev Container",
-  "image": "://microsoft.com",
+  "dockerComposeFile": "../compose.yml",
+  "service": "api",
+  "workspaceFolder": "/app",  
   "customizations": {
     "vscode": {
       "extensions": [

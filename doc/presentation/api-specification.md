@@ -12,7 +12,7 @@ Application 層で定義されたユースケースを実現するためのAPI�
 | ユースケース | エンドポイント | HTTPメソッド |
 |--------------|-----------------|-------------|
 | UC-BOOK-001 書籍登録 | /book | POST |
-| UC-REVIEW-001 レビューの登録 | /book/{isbn}/review | POST |
-| UC-REVIEW-002 レビューの更新 | /book/{isbn}/review | PUT |
-| UC-CATALOG-003 レビューの削除 | /book/{isbn}/review | DELETE |
+| UC-REVIEW-001 レビューの登録 | /review | POST |
+| UC-REVIEW-002 レビューの更新 | /review/{id} | PUT |
+| UC-CATALOG-003 レビューの削除 | /review/{id} | DELETE |
 | UC-CATALOG-001 書籍推薦 | /book/{isbn}/recommendations | GET |
