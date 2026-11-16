@@ -1,10 +1,10 @@
 import { BookId } from "Domain/Models/Book/BookId";
-import { DomainValidationError } from "Domain/Shared/DomainValidationError";
 
 import { Comment } from "./Comment";
 import { Name } from "./Name";
 import { Rating } from "./Rating";
 import { ReviewId } from "./ReviewId";
+import { Threshold } from "./Threshold";
 
 /** 前提書籍とみなすための推薦キーワード。 */
 const RECOMMENDATION_KEYWORDS = [
@@ -37,9 +37,8 @@ const RECOMMENDED_BOOK_PATTERN = new RegExp(
 
 const RATING_WEIGHT = 0.7;
 const COMMENT_WEIGHT = 0.3;
-const DEFAULT_TRUST_THRESHOLD = 0.6;
-const MIN_TRUST_THRESHOLD = 0;
-const MAX_TRUST_THRESHOLD = 1.0;
+/** 信頼性スコアを丸める小数点以下の桁数。 */
+const RELIABILITY_DECIMAL_PLACES = 2;
 
 /**
  * レビュー集約の集約ルート。
@@ -91,6 +90,11 @@ export class Review {
     return this._comment;
   }
 
+  /** レビューの同一性は ReviewId の値で判定する。 */
+  equals(other: Review): boolean {
+    return this._reviewId.equals(other._reviewId);
+  }
+
   /** 投稿者名を変更する。 */
   updateName(name: Name): void {
     this._name = name;
@@ -114,27 +118,28 @@ export class Review {
       .map((match) => match.slice(1, -1));
   }
 
-  /**
-   * 信頼性スコアが threshold 以上なら信頼できるレビューとみなす。
-   * threshold は 0 以上 1.0 以下でなければならず、範囲外や NaN は DomainValidationError とする。
-   */
-  isTrustworthy(threshold: number = DEFAULT_TRUST_THRESHOLD): boolean {
-    Review.assertValidThreshold(threshold);
-    return this.calculateReliability() >= threshold;
+  /** 信頼性スコアが threshold 以上なら信頼できるレビューとみなす。threshold を省略した場合は既定値 0.6 を用いる。 */
+  isTrustworthy(threshold: Threshold = Threshold.default()): boolean {
+    return this.calculateReliability() >= threshold.value;
   }
 
-  /** 評価とコメントの品質係数を重み付けで合成した信頼性スコアを返す。コメントがない場合のコメント品質係数は 0 とする。 */
+  /**
+   * 評価とコメントの品質係数を重み付けで合成した信頼性スコアを、小数点以下2桁に四捨五入して返す。
+   * コメントがない場合のコメント品質係数は 0 とする。
+   * 丸めるのは、浮動小数点の誤差（例：0.65 が 0.6499999999999999 になる）で閾値との比較結果が変わらないようにするため。
+   */
   calculateReliability(): number {
     const commentQuality = this._comment === null ? 0 : this._comment.getQualityFactor();
-    return this._rating.getQualityFactor() * RATING_WEIGHT + commentQuality * COMMENT_WEIGHT;
-  }
-
-  /** threshold が 0 以上 1.0 以下の数値であることを検証する。比較の否定で判定するため NaN も拒否される。 */
-  static assertValidThreshold(threshold: number): void {
-    if (!(threshold >= MIN_TRUST_THRESHOLD && threshold <= MAX_TRUST_THRESHOLD)) {
-      throw new DomainValidationError(
-        `thresholdは${MIN_TRUST_THRESHOLD}以上${MAX_TRUST_THRESHOLD}以下である必要があります。`,
-      );
-    }
+    const score = this._rating.getQualityFactor() * RATING_WEIGHT + commentQuality * COMMENT_WEIGHT;
+    return roundHalfUp(score, RELIABILITY_DECIMAL_PLACES);
   }
 }
+
+/**
+ * 小数点以下 places 桁に四捨五入する。
+ * 2進数で表せない値（例：0.585 は内部的に 0.58499999...）が切り捨て側に丸まらないよう、Number.EPSILON を加えてから丸める。
+ */
+const roundHalfUp = (value: number, places: number): number => {
+  const factor = 10 ** places;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+};

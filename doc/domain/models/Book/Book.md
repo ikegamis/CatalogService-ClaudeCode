@@ -81,7 +81,7 @@ classDiagram
 
 ## リポジトリに対する振る舞い
 
-### `save(book: Book) : Proise<void>`
+### `save(book: Book) : Promise<void>`
 
 - 書籍オブジェクトを永続化する
 
