@@ -69,6 +69,19 @@ export default tseslint.config(
               message:
                 "Application層でInfrastructure層を直接importしてはいけません。インターフェースを通じて依存性を逆転してください。",
             },
+
+            // Presentation層が依存してはいけない領域
+            // Infrastructure の具象クラスを組み立てるのは composition root（CompositionRoot.ts）と起動モジュール（index.ts）だけに限る
+            {
+              from: "./src/Infrastructure/**/*",
+              target: [
+                "./src/Presentation/**/!(CompositionRoot|index).ts",
+                // 除外するのは src/Presentation/<フレームワーク>/ 直下の2ファイルだけ。より深い階層の同名ファイルは対象にする
+                "./src/Presentation/*/*/**/{CompositionRoot,index}.ts",
+              ],
+              message:
+                "Presentation層でInfrastructure層をimportしてはいけません。Infrastructureの組み立てはCompositionRoot.ts（起動はindex.ts）で行い、Controllerなどはユースケースに依存してください。",
+            },
           ],
         },
       ],

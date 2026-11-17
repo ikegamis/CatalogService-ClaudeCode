@@ -39,16 +39,20 @@ export const optionalNullableString = (object: JsonObject, key: string): string 
   throw new RequestValidationError(`${key} は文字列または null である必要があります。`);
 };
 
-/** 10進数の数値表記のみを受け付ける（Number() が受け付ける ""、"0x1"、"Infinity" などを除外する）。 */
+/** 10進数の数値表記（Number() が受け付ける ""、"0x1"、"Infinity" などの表記を除外する）。 */
 const DECIMAL_NUMBER = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/;
 
-/** 省略可能な数値のクエリパラメーター。省略時は undefined を返す。 */
+/**
+ * 省略可能な数値のクエリパラメーター。省略時は undefined を返す。
+ * 10進数の表記でも "1e400" のように有限の数値に変換できないものは拒否する。値域は Domain が検証する。
+ */
 export const optionalNumberQuery = (value: unknown, key: string): number | undefined => {
   if (value === undefined) {
     return undefined;
   }
-  if (typeof value !== "string" || !DECIMAL_NUMBER.test(value)) {
+  const number = typeof value === "string" && DECIMAL_NUMBER.test(value) ? Number(value) : NaN;
+  if (!Number.isFinite(number)) {
     throw new RequestValidationError(`${key} は数値である必要があります。`);
   }
-  return Number(value);
+  return number;
 };

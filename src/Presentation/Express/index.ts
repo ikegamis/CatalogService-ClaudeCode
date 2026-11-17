@@ -4,6 +4,7 @@ import { createPool, loadDatabaseConfig } from "Infrastructure/SQL/DatabaseConfi
 
 import { createApp } from "./app";
 import { createPostgresContainer, resolveControllers } from "./CompositionRoot";
+import { createGracefulShutdown } from "./GracefulShutdown";
 
 /**
  * 起動エントリ: `npx ts-node src/Presentation/Express/index.ts`
@@ -23,13 +24,6 @@ const server = app.listen(port, () => {
   console.log(`CatalogService を起動しました（port: ${port}）。`);
 });
 
-/** 処理中のリクエストを終えてから接続プールを閉じる。 */
-const shutdown = (): void => {
-  server.close(() => {
-    pool.end().catch((error: unknown) => {
-      console.error("接続プールの終了に失敗しました:", error instanceof Error ? error.message : error);
-    });
-  });
-};
+const shutdown = createGracefulShutdown(server, pool);
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
