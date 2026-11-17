@@ -1,5 +1,5 @@
 -- =============================================================================
--- Catalog スキーマ定義（PostgreSQL 17。PostgreSQL 15 以降で動作する構文のみを用いる）
+-- Catalog スキーマ定義（PostgreSQL 17）
 --
 -- 根拠: doc/domain/models/Book/Book.md, doc/domain/models/Review/Review.md,
 --       doc/infrastructure/infrastructure.md（「ドメイン定義を読んで全てのテーブルを作成する」）
@@ -18,7 +18,7 @@
 -- =============================================================================
 
 -- 書籍集約（Book）。書籍集約は削除できない（Book.md「制約」）。
--- 楽観的排他制御用の version カラムは、書籍を更新するユースケースがないため導入しない（決定事項）。
+-- 楽観的排他制御用の version カラムは、書籍を更新するユースケースがないため今回は導入しない（2026-11-17 決定）。
 CREATE TABLE IF NOT EXISTS book (
     book_id  varchar(13)   NOT NULL,
     title    varchar(1000) NOT NULL,
@@ -40,7 +40,9 @@ CREATE TABLE IF NOT EXISTS book (
 --   - InMemory 実装と同じポート契約を保つため。
 CREATE TABLE IF NOT EXISTS review (
     -- ULID（Crockford Base32、26文字）。ASCII のみなので形式を CHECK で厳密に検証できる。
-    review_id  char(26)      NOT NULL,
+    -- 照合順序を "C"（バイト順）に固定し、ORDER BY review_id の結果を DB の既定の照合順序に左右されないようにする
+    -- （InMemory 実装の文字コード順と一致させる）。
+    review_id  char(26)      COLLATE "C" NOT NULL,
     book_id    varchar(13)   NOT NULL,
     -- 投稿者名は trim 済み・常に存在する（匿名投稿は「名無し」）。
     name       varchar(50)   NOT NULL,

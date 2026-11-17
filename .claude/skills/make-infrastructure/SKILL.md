@@ -7,7 +7,7 @@ description: Domain / Application のポートを実装する InMemory / Postgre
 
 ## 目的
 
-Domain / Application が定義したポートを実装し、InMemory および PostgreSQL 15 の永続化アダプターとテストを作成する。
+Domain / Application が定義したポートを実装し、InMemory および PostgreSQL 17 の永続化アダプターとテストを作成する。
 
 ## 手順
 
@@ -43,7 +43,7 @@ Domain / Application が定義したポートを実装し、InMemory および P
 ## テスト要件
 
 - InMemory と SQL の両方でポート契約を検証する。
-- SQL統合テストは PostgreSQL 15 を使用し、可能ならテストごとに独立したデータ状態を確保する。
+- SQL統合テストは PostgreSQL 17 を使用し、可能ならテストごとに独立したデータ状態を確保する。
 - 保存・取得・更新・削除（仕様に存在する場合）、一意制約、同時更新、ロールバックを検証する。
 - 集約の再構成後も不変条件・値が保たれることを検証する。
 - SQLテストを実行できない場合は、未実施理由と必要な環境を明記する。InMemoryテストをSQL統合テストの代わりと報告しない。
@@ -52,7 +52,7 @@ Domain / Application が定義したポートを実装し、InMemory および P
 ## 完了条件
 
 - 対象ポートの必要な実装がそろっている。
-- SQL実装がPostgreSQL 15で検証されている、または未実施理由が明確である。
+- SQL実装がPostgreSQL 17で検証されている、または未実施理由が明確である。
 - InMemory / SQL がポート契約を満たしている。
 - トランザクション・制約・エラー変換がテストされている。
 
