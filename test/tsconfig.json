@@ -1,0 +1,11 @@
+{
+  // エディターの型チェック用。test/ 配下にもルートの paths（Domain/... などの import）を適用する。
+  // 出力はしない（ビルド対象はルートの tsconfig.json の src のみ）。
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["../src/**/*.ts", "./**/*.ts", "../setupJest.ts"]
+}

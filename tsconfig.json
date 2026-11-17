@@ -5,12 +5,18 @@
   },
   "compilerOptions": {
     "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
-    "moduleResolution": "node",
+    "module": "node16",
+    "moduleResolution": "node16",
+    // ts-jest は module: node16 のとき isolatedModules を要求する。
+    "isolatedModules": true,
+    // TypeScript 6 以降は types の既定値が空（@types/* を自動で読み込まない）ため明示する。
+    "types": ["node"],
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "baseUrl": "./",
+    // baseUrl は TypeScript 6 以降で廃止。paths はこのファイルの位置を基準に解決される。
     "paths": {
       "*": ["./src/*"]
     },
