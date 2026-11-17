@@ -48,7 +48,22 @@ describeSql("test-data.sql（手動テスト用データ）", () => {
       expect(await books.findById(new BookId(id))).not.toBeNull();
     }
     const reconstructed = await Promise.all(reviewBookIds.map((r) => reviews.findAllByBookId(new BookId(r.book_id))));
-    expect(reconstructed.flat()).toHaveLength(7);
+    expect(reconstructed.flat()).toHaveLength(10);
+  });
+
+  it("レビュー数 0 件の書籍と 1 件の書籍がそれぞれ1冊ずつある", async () => {
+    const bookIds = (await pool.query<{ book_id: string }>("SELECT book_id FROM book ORDER BY book_id")).rows;
+    const counts = await Promise.all(
+      bookIds.map(async (r) => [r.book_id, (await reviews.findAllByBookId(new BookId(r.book_id))).length] as const),
+    );
+
+    expect(counts).toEqual([
+      ["9784000000001", 5],
+      ["9784000000002", 2],
+      ["9784000000003", 0],
+      ["9784000000004", 1],
+      ["9784000000005", 2],
+    ]);
   });
 
   it.each([
