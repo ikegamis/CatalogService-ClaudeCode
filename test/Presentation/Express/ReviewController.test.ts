@@ -1,5 +1,9 @@
 import { failure, success } from "Application/Shared/UseCaseResult";
-import { INTERNAL_ERROR_MESSAGE } from "Presentation/Express/Errors/errorHandler";
+import {
+  INTERNAL_ERROR_MESSAGE,
+  INVALID_JSON_MESSAGE,
+  INVALID_PATH_ENCODING_MESSAGE,
+} from "Presentation/Express/Errors/errorHandler";
 
 import {
   createTestApp,
@@ -16,6 +20,9 @@ const ISBN = "9784000000000";
 const reviewDto = { reviewId: REVIEW_ID, bookId: ISBN, name: "山田", rating: 4, comment: "良い本でした" };
 const reviewResponse = { id: REVIEW_ID, bookId: ISBN, name: "山田", rating: 4, comment: "良い本でした" };
 const reviewRequest = { bookId: ISBN, name: "山田", rating: 4, comment: "良い本でした" };
+
+const sendRawJson = (url: string, method: string, body: string): Promise<Response> =>
+  fetch(url, { method, headers: { "Content-Type": "application/json" }, body });
 
 describe("Review API", () => {
   let doubles: UseCaseDoubles;
@@ -81,6 +88,17 @@ describe("Review API", () => {
       expect(doubles.registerReview.execute).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ["ボディが配列", JSON.stringify([reviewRequest]), "リクエストボディは JSON オブジェクトである必要があります。"],
+      ["ボディが不正な JSON", '{"bookId": ', INVALID_JSON_MESSAGE],
+    ])("%sの場合は 500 と理由を返し、ユースケースを呼ばない", async (_label, body, expected) => {
+      const response = await sendRawJson(server.url("/review"), "POST", body);
+
+      expect(await expectFailure(response)).toBe(expected);
+      expect(doubles.registerReview.execute).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+    });
+
     it("対象の書籍が登録されていない場合は 500 とその理由を返す", async () => {
       doubles.registerReview.execute.mockResolvedValue(
         failure("BOOK_NOT_FOUND", "書籍ID '9784000000000' の書籍は登録されていません。"),
@@ -121,11 +139,36 @@ describe("Review API", () => {
       expect(doubles.updateReview.execute).toHaveBeenCalledWith({ reviewId: REVIEW_ID, ...reviewRequest });
     });
 
-    it("ボディの必須項目が不足している場合は 500 を返し、ユースケースを呼ばない", async () => {
-      const response = await sendJson(server.url(`/review/${REVIEW_ID}`), "PUT", { rating: 3 });
+    it.each([
+      ["bookId がない", { rating: 3 }, "bookId は必須の文字列です。"],
+      ["rating がない", { bookId: ISBN }, "rating は必須の数値です。"],
+      ["rating が文字列", { bookId: ISBN, rating: "3" }, "rating は必須の数値です。"],
+      ["name が数値", { bookId: ISBN, rating: 3, name: 1 }, "name は文字列または null である必要があります。"],
+      ["comment がオブジェクト", { bookId: ISBN, rating: 3, comment: {} }, "comment は文字列または null である必要があります。"],
+    ])("%s場合は 500 と理由を返し、ユースケースを呼ばない", async (_label, body, expected) => {
+      const response = await sendJson(server.url(`/review/${REVIEW_ID}`), "PUT", body);
 
-      expect(await expectFailure(response)).toBe("bookId は必須の文字列です。");
+      expect(await expectFailure(response)).toBe(expected);
       expect(doubles.updateReview.execute).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["ボディが配列", JSON.stringify([reviewRequest]), "リクエストボディは JSON オブジェクトである必要があります。"],
+      ["ボディが不正な JSON", '{"bookId": ', INVALID_JSON_MESSAGE],
+    ])("%sの場合は 500 と理由を返し、ユースケースを呼ばない", async (_label, body, expected) => {
+      const response = await sendRawJson(server.url(`/review/${REVIEW_ID}`), "PUT", body);
+
+      expect(await expectFailure(response)).toBe(expected);
+      expect(doubles.updateReview.execute).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+    });
+
+    it("パスのレビューIDのエンコードが不正な場合は 500 と理由を返し、予期しないエラーとして記録しない", async () => {
+      const response = await sendJson(server.url("/review/%E0%A4%A"), "PUT", reviewRequest);
+
+      expect(await expectFailure(response)).toBe(INVALID_PATH_ENCODING_MESSAGE);
+      expect(doubles.updateReview.execute).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
     });
 
     it("レビューが登録されていない場合は 500 とその理由を返す", async () => {
@@ -168,6 +211,14 @@ describe("Review API", () => {
       const response = await fetch(server.url(`/review/${REVIEW_ID}`), { method: "DELETE" });
 
       expect(await expectFailure(response)).toBe(result.ok ? "" : result.error.message);
+    });
+
+    it("パスのレビューIDのエンコードが不正な場合は 500 と理由を返し、予期しないエラーとして記録しない", async () => {
+      const response = await fetch(server.url("/review/%E0%A4%A"), { method: "DELETE" });
+
+      expect(await expectFailure(response)).toBe(INVALID_PATH_ENCODING_MESSAGE);
+      expect(doubles.deleteReview.execute).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
     });
 
     it("予期しない例外は 500 と汎用メッセージを返す", async () => {

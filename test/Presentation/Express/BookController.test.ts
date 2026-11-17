@@ -1,11 +1,19 @@
 import { failure, success } from "Application/Shared/UseCaseResult";
-import { INTERNAL_ERROR_MESSAGE, INVALID_JSON_MESSAGE, PAYLOAD_TOO_LARGE_MESSAGE } from "Presentation/Express/Errors/errorHandler";
+import {
+  INTERNAL_ERROR_MESSAGE,
+  INVALID_JSON_MESSAGE,
+  PAYLOAD_TOO_LARGE_MESSAGE,
+  UNSUPPORTED_CHARSET_MESSAGE,
+  UNSUPPORTED_ENCODING_MESSAGE,
+} from "Presentation/Express/Errors/errorHandler";
 
 import {
   createTestApp,
   createUseCaseDoubles,
   expectFailure,
+  expectRawFailure,
   sendJson,
+  sendRaw,
   startServer,
   TestServer,
   UseCaseDoubles,
@@ -96,6 +104,21 @@ describe("Book API", () => {
     });
 
     it.each([
+      ["charset が UTF-8 以外", { "Content-Type": "application/json; charset=latin2" }, UNSUPPORTED_CHARSET_MESSAGE],
+      [
+        "Content-Encoding に対応していない",
+        { "Content-Type": "application/json", "Content-Encoding": "compress" },
+        UNSUPPORTED_ENCODING_MESSAGE,
+      ],
+    ])("%s場合は 500 と理由を返し、予期しないエラーとして記録しない", async (_label, headers, expected) => {
+      const response = await sendRaw(server.url("/book"), { method: "POST", headers, body: JSON.stringify(bookRequest) });
+
+      expect(expectRawFailure(response)).toBe(expected);
+      expect(doubles.registerBook.execute).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+    });
+
+    it.each([
       ["既に登録されている", failure("BOOK_ALREADY_EXISTS", "書籍ID '9784000000000' は既に登録されています。")],
       ["ドメインの制約違反", failure("VALIDATION_ERROR", "Priceは整数円である必要があります。")],
     ])("ユースケースが失敗（%s）した場合は 500 とその理由を返す", async (_label, result) => {
@@ -138,7 +161,37 @@ describe("Book API", () => {
       expect(doubles.recommendBooks.execute).toHaveBeenCalledWith({ bookId: ISBN, threshold: undefined });
     });
 
-    it.each([["abc"], [""], ["0x1"], ["Infinity"]])(
+    it("ETag を付けない（条件付き GET は仕様外）", async () => {
+      doubles.recommendBooks.execute.mockResolvedValue(success({ recommendedBooks: ["書籍1"] }));
+
+      const response = await sendRaw(server.url(`/book/${ISBN}/recommendations`));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.etag).toBeUndefined();
+    });
+
+    it.each([
+      ["If-None-Match: *", { "If-None-Match": "*" }],
+      // ETag を有効にしていた場合にこの応答へ付いていた値
+      ["If-None-Match: 以前の ETag", { "If-None-Match": 'W/"2a-IBn0HQL21Ln2h2GKgjH2JpI6dy4"' }],
+      ["If-Modified-Since", { "If-Modified-Since": new Date().toUTCString() }],
+    ])("条件付きヘッダー（%s）があっても 304 ではなく 200 と JSON を返す", async (_label, headers) => {
+      doubles.recommendBooks.execute.mockResolvedValue(success({ recommendedBooks: ["書籍1"] }));
+
+      const response = await sendRaw(server.url(`/book/${ISBN}/recommendations`), { headers });
+
+      expect(response.status).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ ok: true, recommendedBooks: ["書籍1"] });
+    });
+
+    it("HEAD には応答しない（仕様外。Express 既定の 404）", async () => {
+      const response = await sendRaw(server.url(`/book/${ISBN}/recommendations`), { method: "HEAD" });
+
+      expect(response.status).toBe(404);
+      expect(doubles.recommendBooks.execute).not.toHaveBeenCalled();
+    });
+
+    it.each([["abc"], [""], ["0x1"], ["Infinity"], ["1e400"]])(
       "threshold が数値表記でない（%p）場合は 500 を返し、ユースケースを呼ばない",
       async (threshold) => {
         const response = await fetch(server.url(`/book/${ISBN}/recommendations?threshold=${threshold}`));

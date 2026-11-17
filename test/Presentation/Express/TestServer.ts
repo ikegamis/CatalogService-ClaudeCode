@@ -1,5 +1,5 @@
 import { AddressInfo } from "node:net";
-import { Server } from "node:http";
+import { IncomingHttpHeaders, request, Server } from "node:http";
 
 import { Express } from "express";
 
@@ -67,6 +67,40 @@ export const sendJson = (url: string, method: string, body: unknown): Promise<Re
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+export type RawResponse = { status: number; headers: IncomingHttpHeaders; body: string };
+
+/**
+ * node:http で送る。fetch は条件付きリクエストのヘッダーや Content-Encoding などを書き換える・解釈することがあるため、
+ * ヘッダーをそのまま送りたい検証に使う。
+ */
+export const sendRaw = (
+  url: string,
+  options: { method?: string; headers?: Record<string, string>; body?: string } = {},
+): Promise<RawResponse> =>
+  new Promise((resolve, reject) => {
+    const req = request(url, { method: options.method ?? "GET", headers: options.headers }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (chunk: Buffer) => chunks.push(chunk));
+      res.on("end", () =>
+        resolve({ status: res.statusCode ?? 0, headers: res.headers, body: Buffer.concat(chunks).toString("utf8") }),
+      );
+      res.on("error", reject);
+    });
+    req.on("error", reject);
+    req.end(options.body);
+  });
+
+/** RawResponse が FalseMessage（{ ok: false, message }）であることを確認して message を返す。 */
+export const expectRawFailure = (response: RawResponse, status = 500): string => {
+  expect(response.status).toBe(status);
+  expect(response.headers["content-type"]).toMatch(/^application\/json/);
+  const body = JSON.parse(response.body) as { ok: unknown; message: unknown };
+  expect(Object.keys(body).sort()).toEqual(["message", "ok"]);
+  expect(body.ok).toBe(false);
+  expect(typeof body.message).toBe("string");
+  return body.message as string;
+};
 
 /** 応答が FalseMessage（{ ok: false, message }）であることを確認して message を返す。 */
 export const expectFailure = async (response: Response, status = 500): Promise<string> => {
