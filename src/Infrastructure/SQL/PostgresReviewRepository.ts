@@ -59,10 +59,12 @@ export class PostgresReviewRepository implements IReviewRepository {
   /**
    * 書籍に紐づくレビューを review_id（ULID なので概ね投稿順）の昇順で返す。
    * 順序は仕様にないが、書籍推薦で品質係数が同じレビューの順序がこの順序に従うため、実行ごとに変わらないよう固定する。
+   * 照合順序は "C"（バイト順。InMemory 実装の文字コード順と同じ）を明示する。schema.sql で列の照合順序も "C" にしているが、
+   * 列定義を変更する前に作成された既存テーブル（CREATE TABLE IF NOT EXISTS では変わらない）でも同じ順序にするため。
    */
   async findAllByBookId(bookId: BookId): Promise<Review[]> {
     const result = await this.database.query<ReviewRow>(
-      `SELECT ${SELECT_COLUMNS} FROM review WHERE book_id = $1 ORDER BY review_id`,
+      `SELECT ${SELECT_COLUMNS} FROM review WHERE book_id = $1 ORDER BY review_id COLLATE "C"`,
       [bookId.value],
     );
     return result.rows.map(toReview);

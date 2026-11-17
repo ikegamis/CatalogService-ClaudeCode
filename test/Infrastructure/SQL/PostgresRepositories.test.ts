@@ -2,6 +2,11 @@ import { DatabaseError, Pool } from "pg";
 
 import { BookAlreadyExistsError } from "Domain/Models/Book/BookAlreadyExistsError";
 import { BookId } from "Domain/Models/Book/BookId";
+import {
+  IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MILLIS,
+  LOCK_TIMEOUT_MILLIS,
+  STATEMENT_TIMEOUT_MILLIS,
+} from "Infrastructure/SQL/DatabaseConfig";
 import { migrate } from "Infrastructure/SQL/migrations";
 import { PostgresBookRepository } from "Infrastructure/SQL/PostgresBookRepository";
 import { PostgresDatabase } from "Infrastructure/SQL/PostgresDatabase";
@@ -74,6 +79,24 @@ describeSql("PostgreSQL 実装", () => {
       await migrate(pool);
 
       expect(await new PostgresBookRepository(database).findById(new BookId(BOOK_ID_1))).not.toBeNull();
+    });
+
+    it("プールの接続には、SQL 文・ロック待ち・トランザクション放置のタイムアウトが設定されている", async () => {
+      const show = async (name: string) => (await pool.query(`SHOW ${name}`)).rows[0][name];
+
+      expect(await show("statement_timeout")).toBe(`${STATEMENT_TIMEOUT_MILLIS / 1000}s`);
+      expect(await show("lock_timeout")).toBe(`${LOCK_TIMEOUT_MILLIS / 1000}s`);
+      expect(await show("idle_in_transaction_session_timeout")).toBe(
+        `${IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MILLIS / 60_000}min`,
+      );
+    });
+
+    it("review_id の照合順序は \"C\"（バイト順）である", async () => {
+      const result = await pool.query<{ collation_name: string }>(
+        "SELECT collation_name FROM information_schema.columns WHERE table_name = 'review' AND column_name = 'review_id'",
+      );
+
+      expect(result.rows[0].collation_name).toBe("C");
     });
 
     it("rating・price は JavaScript の number として取得される（型変換で文字列にならない）", async () => {

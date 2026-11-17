@@ -94,7 +94,7 @@
 
 - `test/Domain`：ドメインモデル・ドメインサービスの単体テスト
 - `test/Application`：ユースケースのテスト（ポートのテストダブルを利用）
-- `test/Infrastructure`：Repository等の実装テスト。SQL実装は PostgreSQL 15 を使った統合テストを基本とする
+- `test/Infrastructure`：Repository等の実装テスト。SQL実装は PostgreSQL 17 を使った統合テストを基本とする
 - `test/Presentation`：HTTP境界のテスト。Expressアプリを起動し、HTTP入出力を検証する
 - テストファイルの配置・命名は `src` の構成と対応させる
 

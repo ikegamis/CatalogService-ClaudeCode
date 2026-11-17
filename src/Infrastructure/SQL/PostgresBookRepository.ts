@@ -28,7 +28,8 @@ export class PostgresBookRepository implements IBookRepository {
   /**
    * 書籍を INSERT する。上書きはしない。
    * 存在確認から保存までの間に同じ書籍IDが登録された場合（同時登録）は、主キー違反を BookAlreadyExistsError に変換する。
-   * トランザクション内でこのエラーが起きると、そのトランザクションは以降の SQL を受け付けなくなる点に注意。
+   * トランザクション内でこのエラーが起きると、そのトランザクションは以降の SQL を受け付けなくなる。
+   * callback 内で catch して正常終了しても、トランザクション管理が TransactionAbortedError を投げる。
    */
   async save(book: Book): Promise<void> {
     try {

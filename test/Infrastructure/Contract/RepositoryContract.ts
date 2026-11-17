@@ -8,6 +8,7 @@ import { Price } from "Domain/Models/Book/Price";
 import { IReviewRepository } from "Domain/Models/Review/IReviewRepository";
 import { ReviewId } from "Domain/Models/Review/ReviewId";
 import { Threshold } from "Domain/Models/Review/Threshold";
+import { TransactionAbortedError } from "Infrastructure/Shared/TransactionAbortedError";
 
 import {
   BOOK_ID_1,
@@ -272,6 +273,54 @@ export const describeRepositoryContract = (createHarness: () => Promise<Reposito
         }),
       ).rejects.toThrow("外側で失敗");
 
+      expect(await h.bookRepository.findById(new BookId(BOOK_ID_1))).toBeNull();
+    });
+
+    it("callback が書き込みの失敗を catch して正常終了しても成功扱いにせず、TransactionAbortedError を投げて何も残さない", async () => {
+      await h.bookRepository.save(makeBook({ bookId: BOOK_ID_2 }));
+
+      const error = await h.transactionManager
+        .begin(async () => {
+          await h.reviewRepository.save(makeReview());
+          // 主キー違反（BookAlreadyExistsError）を握りつぶす
+          await h.bookRepository.save(makeBook({ bookId: BOOK_ID_2 })).catch(() => undefined);
+          return "成功したつもり";
+        })
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(TransactionAbortedError);
+      expect(await h.reviewRepository.findById(new ReviewId(reviewIdOf(1)))).toBeNull();
+    });
+
+    it("書き込みが失敗したトランザクションでは、トランザクションが終わるまで以降の読み書きを受け付けない", async () => {
+      await h.bookRepository.save(makeBook());
+      let afterFailure: unknown;
+
+      await h.transactionManager
+        .begin(async () => {
+          await h.bookRepository.save(makeBook()).catch(() => undefined);
+          afterFailure = await h.reviewRepository.findById(new ReviewId(reviewIdOf(1))).catch((e: unknown) => e);
+        })
+        .catch(() => undefined);
+
+      expect(afterFailure).toBeInstanceOf(Error);
+      // 中断状態はそのトランザクションに限られる
+      expect(await h.bookRepository.findById(new BookId(BOOK_ID_1))).not.toBeNull();
+    });
+
+    it("内側の begin の失敗を外側の callback が catch しても、外側のトランザクションは TransactionAbortedError になる", async () => {
+      await h.bookRepository.save(makeBook({ bookId: BOOK_ID_2 }));
+
+      const error = await h.transactionManager
+        .begin(async () => {
+          await h.bookRepository.save(makeBook({ bookId: BOOK_ID_1 }));
+          await h.transactionManager
+            .begin(() => h.bookRepository.save(makeBook({ bookId: BOOK_ID_2 })))
+            .catch(() => undefined);
+        })
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(TransactionAbortedError);
       expect(await h.bookRepository.findById(new BookId(BOOK_ID_1))).toBeNull();
     });
 
